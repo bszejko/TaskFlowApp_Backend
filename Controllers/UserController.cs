@@ -29,28 +29,34 @@ public class UserController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost("register")]
+ [HttpPost("register")]
 public async Task<IActionResult> Register([FromBody] User user)
 {
-        
     if (!ModelState.IsValid)
     {
-        return BadRequest(ModelState); // Returns validation errors
+        // Zwraca szczegółowe informacje o błędach walidacji
+        return BadRequest(ModelState);
     }
-    
+
     var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
     if (existingUser != null)
     {
+        // Komunikat o istniejącym już użytkowniku
         return BadRequest("User already exists.");
     }
 
+    // Walidacja hasła (przykład)
+    if (user.Password.Length < 8)
+    {
+        return BadRequest("Password must be at least 8 characters long.");
+    }
+
     user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-   
+
     await _context.Users.InsertOneAsync(user);
-    return Ok(new { message = "User registered succesfully." });
-
-
+    return Ok(new { message = "User registered successfully." });
 }
+
 
 
     [HttpPost("login")]
