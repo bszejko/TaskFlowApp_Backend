@@ -32,25 +32,19 @@ public class UserController : ControllerBase
  [HttpPost("register")]
 public async Task<IActionResult> Register([FromBody] User user)
 {
-    if (!ModelState.IsValid)
+    if (!ModelState.IsValid) //checks if the data sent in the user request is valid based on the model annotations
     {
-        // Zwraca szczegółowe informacje o błędach walidacji
         return BadRequest(ModelState);
     }
 
     var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
     if (existingUser != null)
     {
-        // Komunikat o istniejącym już użytkowniku
+        // if user already exists
         return BadRequest("User already exists.");
     }
 
-    // Walidacja hasła (przykład)
-    if (user.Password.Length < 8)
-    {
-        return BadRequest("Password must be at least 8 characters long.");
-    }
-
+    //hashing the password
     user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
     await _context.Users.InsertOneAsync(user);
@@ -64,35 +58,34 @@ public async Task<IActionResult> Register([FromBody] User user)
     {
         
         
-        var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
+        var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync(); //Retrieves the user from MongoDB based on the provided email
         if (existingUser != null && BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
     {
-         Console.WriteLine($"User: {existingUser.FirstName}, {existingUser.Email}"); // Dodaj to logowanie
         
-        var token = GenerateJwtToken(existingUser);
-        string firstName = existingUser.FirstName;
+        var token = GenerateJwtToken(existingUser); //generates a JWT token for the user
+        string firstName = existingUser.FirstName; 
         
         return Ok(new { 
             token = token, 
             message = "User authenticated successfully.",
-            firstName=firstName// Zwracanie imienia użytkownika
+            firstName=firstName //passing the user name so that it can be displayed on the homepage
         });
     }
         return Unauthorized("Invalid credentials.");
     }
 
-   private string GenerateJwtToken(User user)
+   private string GenerateJwtToken(User user) //method for generating the token
 {
     var tokenHandler = new JwtSecurityTokenHandler();
-    var secret = _configuration["JwtConfig:Secret"]; // Pobierz sekret z konfiguracji
-    var key = Encoding.ASCII.GetBytes(secret); // Klucz powinien być przechowywany bezpiecznie
+    var secret = _configuration["JwtConfig:Secret"]; 
+    var key = Encoding.ASCII.GetBytes(secret); 
     var tokenDescriptor = new SecurityTokenDescriptor
     {
         Subject = new ClaimsIdentity(new Claim[] 
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email),
-            // więcej claimów 
+           
         }),
         Expires = DateTime.UtcNow.AddDays(7),
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
