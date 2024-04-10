@@ -23,7 +23,6 @@ namespace TaskFlow.Models
         
         [BsonElement("taskIds")]
         [BsonRepresentation(BsonType.ObjectId)]
-        [BsonRequired]
         public List<string> TaskIds { get; set; } // Lista identyfikatorów zadań przypisanych do projektu
 
 
