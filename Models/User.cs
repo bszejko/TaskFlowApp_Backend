@@ -11,25 +11,25 @@ namespace TaskFlow.Models
 
         [BsonElement("email")]
         [BsonRequired]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [BsonElement("password")]
         [BsonRequired]
-        public string Password { get; set; }
+        public required string Password { get; set; }
 
         [BsonElement("firstName")]
         [BsonRequired]
-        public string FirstName { get; set; } 
+        public required string FirstName { get; set; } 
         [BsonElement("lastName")]
         [BsonRequired]
-        public string LastName { get; set; } 
+        public required string LastName { get; set; } 
 
         [BsonElement("role")]
         [BsonRequired]
-        public List<string> Roles { get; set; }
+        public required List<string> Roles { get; set; }
 
         [BsonElement("projectIds")]
-        public List<string> ProjectIds { get; set; } // Lista identyfikatorów projektów, do których użytkownik jest przypisany
+        public List<string>? ProjectIds { get; set; } // Lista identyfikatorów projektów, do których użytkownik jest przypisany
 
         // ...any other properties...
     }
