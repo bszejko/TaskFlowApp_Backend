@@ -44,6 +44,9 @@ public async Task<IActionResult> Register([FromBody] User user)
         return BadRequest("User already exists.");
     }
 
+    // Setting default role as 'admin'
+    user.Role = "admin"; 
+
     //hashing the password
     user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
@@ -64,11 +67,14 @@ public async Task<IActionResult> Register([FromBody] User user)
         
         var token = GenerateJwtToken(existingUser); //generates a JWT token for the user
         string firstName = existingUser.FirstName; 
+        string role = existingUser.Role;
         
         return Ok(new { 
             token = token, 
             message = "User authenticated successfully.",
-            firstName=firstName //passing the user name so that it can be displayed on the homepage
+            firstName=firstName, //passing the user name so that it can be displayed on the homepage
+            role=role
+
         });
     }
         return Unauthorized("Invalid credentials.");
@@ -104,6 +110,15 @@ public static string GenerateSecretKey()
         return Convert.ToBase64String(randomNumber);
     }
 }
+    // GET: /users
+    [HttpGet("users")]
+    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    {
+        var users = await _context.Users.Find(_ => true).ToListAsync();
+        return Ok(users);
+    }
 
-
+   
 }
+
+

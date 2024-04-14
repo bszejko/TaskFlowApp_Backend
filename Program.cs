@@ -8,6 +8,10 @@ using TaskFlow.Data;
 
 
 
+    
+
+ 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Konfiguracja JWT
@@ -69,7 +73,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+
 app.Run();
+
+
+
+
 
 // MongoDbSettings class
 public class MongoDbSettings
@@ -77,3 +86,4 @@ public class MongoDbSettings
     public required string ConnectionString { get; set; }
     public required string DatabaseName { get; set; }
 }
+

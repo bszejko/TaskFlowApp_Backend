@@ -26,7 +26,7 @@ namespace TaskFlow.Models
 
         [BsonElement("role")]
         [BsonRequired]
-        public required List<string> Roles { get; set; }
+        public required string Role { get; set; }
 
         [BsonElement("projectIds")]
         public List<string>? ProjectIds { get; set; } // Lista identyfikatorów projektów, do których użytkownik jest przypisany

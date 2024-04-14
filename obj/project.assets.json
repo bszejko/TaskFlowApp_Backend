@@ -122,7 +122,7 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Abstractions/7.4.1": {
+      "Microsoft.IdentityModel.Abstractions/7.5.1": {
         "type": "package",
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Abstractions.dll": {
@@ -135,10 +135,10 @@
           }
         }
       },
-      "Microsoft.IdentityModel.JsonWebTokens/7.4.1": {
+      "Microsoft.IdentityModel.JsonWebTokens/7.5.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.IdentityModel.Tokens": "7.4.1"
+          "Microsoft.IdentityModel.Tokens": "7.5.1"
         },
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll": {
@@ -151,10 +151,10 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Logging/7.4.1": {
+      "Microsoft.IdentityModel.Logging/7.5.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.IdentityModel.Abstractions": "7.4.1"
+          "Microsoft.IdentityModel.Abstractions": "7.5.1"
         },
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Logging.dll": {
@@ -201,10 +201,10 @@
           }
         }
       },
-      "Microsoft.IdentityModel.Tokens/7.4.1": {
+      "Microsoft.IdentityModel.Tokens/7.5.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.IdentityModel.Logging": "7.4.1"
+          "Microsoft.IdentityModel.Logging": "7.5.1"
         },
         "compile": {
           "lib/net8.0/Microsoft.IdentityModel.Tokens.dll": {
@@ -449,11 +449,11 @@
           "lib/netcoreapp2.0/_._": {}
         }
       },
-      "System.IdentityModel.Tokens.Jwt/7.4.1": {
+      "System.IdentityModel.Tokens.Jwt/7.5.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.IdentityModel.JsonWebTokens": "7.4.1",
-          "Microsoft.IdentityModel.Tokens": "7.4.1"
+          "Microsoft.IdentityModel.JsonWebTokens": "7.5.1",
+          "Microsoft.IdentityModel.Tokens": "7.5.1"
         },
         "compile": {
           "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
@@ -927,10 +927,10 @@
         "microsoft.extensions.logging.abstractions.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Abstractions/7.4.1": {
-      "sha512": "GiQzMSzHQWPhnjpn/xy6SGcjtN8ZJbhB9ZEg3RglJ64QwH+VGp7xEpIN674UgjSDF+jJSrAY4/7/2S6F7Nh0hw==",
+    "Microsoft.IdentityModel.Abstractions/7.5.1": {
+      "sha512": "PT16ZFbPIiMsYv07oy3zOjqUOJ7xutGBkJTOX0+IbNyU6+O6X7aIxjq9EaSSRLWbekRgamgtmfg8Xjw6A6Ua9g==",
       "type": "package",
-      "path": "microsoft.identitymodel.abstractions/7.4.1",
+      "path": "microsoft.identitymodel.abstractions/7.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -946,14 +946,14 @@
         "lib/net8.0/Microsoft.IdentityModel.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Abstractions.xml",
-        "microsoft.identitymodel.abstractions.7.4.1.nupkg.sha512",
+        "microsoft.identitymodel.abstractions.7.5.1.nupkg.sha512",
         "microsoft.identitymodel.abstractions.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.JsonWebTokens/7.4.1": {
-      "sha512": "RnrQO8IniImY6qrC9qYDc7UBcbPF7+Dp14ee9TqKnlB2/oyIKq8Q3tJ/65zgYvfV4p6iMYLpi+W8C/36J58cIg==",
+    "Microsoft.IdentityModel.JsonWebTokens/7.5.1": {
+      "sha512": "93CGSa8RPdZU8zfvA3nf9NGKUqEnQrE12VzYlMqKh72ddhzusosqLNEUgH/YhFWBLRFOnY1RCgHMV7pR+sAx2w==",
       "type": "package",
-      "path": "microsoft.identitymodel.jsonwebtokens/7.4.1",
+      "path": "microsoft.identitymodel.jsonwebtokens/7.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -969,14 +969,14 @@
         "lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.JsonWebTokens.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.JsonWebTokens.xml",
-        "microsoft.identitymodel.jsonwebtokens.7.4.1.nupkg.sha512",
+        "microsoft.identitymodel.jsonwebtokens.7.5.1.nupkg.sha512",
         "microsoft.identitymodel.jsonwebtokens.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Logging/7.4.1": {
-      "sha512": "QsNBNAdoTP+JxBqqMw3isVeV86z2b+ka94Pue3eRRz8O15mfHhcSnb10IM+aqavAaxCO+EwNu5F/yyRlQ0usWg==",
+    "Microsoft.IdentityModel.Logging/7.5.1": {
+      "sha512": "PnpAQX20BAiDIPYmWUyQSlEaWD8BLXzHpiDGTCT568Cs0ReOeyzNe401LzCeiv6ilug/KefVeV1CeqtCHTo8dw==",
       "type": "package",
-      "path": "microsoft.identitymodel.logging/7.4.1",
+      "path": "microsoft.identitymodel.logging/7.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -992,7 +992,7 @@
         "lib/net8.0/Microsoft.IdentityModel.Logging.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Logging.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Logging.xml",
-        "microsoft.identitymodel.logging.7.4.1.nupkg.sha512",
+        "microsoft.identitymodel.logging.7.5.1.nupkg.sha512",
         "microsoft.identitymodel.logging.nuspec"
       ]
     },
@@ -1042,10 +1042,10 @@
         "microsoft.identitymodel.protocols.openidconnect.nuspec"
       ]
     },
-    "Microsoft.IdentityModel.Tokens/7.4.1": {
-      "sha512": "akl3hQWdj87XkSRahwhrmx9ZfchF97RZoKr9v9fwjrpQz3t0x8lnsjcOfButSS6cvyY/EX0HJuXb5hgkqFjP/g==",
+    "Microsoft.IdentityModel.Tokens/7.5.1": {
+      "sha512": "Q3DKpyFViP84IUlTFKH/zIkswIrmSh2Vd/eFDo4wlOHy4DYxoweZEEw4kDEiKt9VCX6o7SddK3HK2xDYyFpexA==",
       "type": "package",
-      "path": "microsoft.identitymodel.tokens/7.4.1",
+      "path": "microsoft.identitymodel.tokens/7.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1061,7 +1061,7 @@
         "lib/net8.0/Microsoft.IdentityModel.Tokens.xml",
         "lib/netstandard2.0/Microsoft.IdentityModel.Tokens.dll",
         "lib/netstandard2.0/Microsoft.IdentityModel.Tokens.xml",
-        "microsoft.identitymodel.tokens.7.4.1.nupkg.sha512",
+        "microsoft.identitymodel.tokens.7.5.1.nupkg.sha512",
         "microsoft.identitymodel.tokens.nuspec"
       ]
     },
@@ -1374,10 +1374,10 @@
         "version.txt"
       ]
     },
-    "System.IdentityModel.Tokens.Jwt/7.4.1": {
-      "sha512": "V8T6qCdNI5OEUafOhyOnyuwHlTs56hPE6nQLNDXDNI7MIQO8MGRQVuWOruzEscURXpGbNuRz+m8qFrT8SDeEQA==",
+    "System.IdentityModel.Tokens.Jwt/7.5.1": {
+      "sha512": "UUw+E0R73lZLlXgneYIJQxNs1kfbcxjVzw64JQyiwjqCd4HMpAbjn+xRo86QZT84uHq8/MkqvfH82tgjgPzpuw==",
       "type": "package",
-      "path": "system.identitymodel.tokens.jwt/7.4.1",
+      "path": "system.identitymodel.tokens.jwt/7.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1393,7 +1393,7 @@
         "lib/net8.0/System.IdentityModel.Tokens.Jwt.xml",
         "lib/netstandard2.0/System.IdentityModel.Tokens.Jwt.dll",
         "lib/netstandard2.0/System.IdentityModel.Tokens.Jwt.xml",
-        "system.identitymodel.tokens.jwt.7.4.1.nupkg.sha512",
+        "system.identitymodel.tokens.jwt.7.5.1.nupkg.sha512",
         "system.identitymodel.tokens.jwt.nuspec"
       ]
     },
@@ -1578,30 +1578,30 @@
       "BCrypt.Net-Next >= 4.0.3",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.3",
       "Microsoft.AspNetCore.OpenApi >= 8.0.2",
-      "Microsoft.IdentityModel.Tokens >= 7.4.1",
+      "Microsoft.IdentityModel.Tokens >= 7.5.1",
       "MongoDB.Driver >= 2.24.0",
       "Swashbuckle.AspNetCore >= 6.4.0",
-      "System.IdentityModel.Tokens.Jwt >= 7.4.1"
+      "System.IdentityModel.Tokens.Jwt >= 7.5.1"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\amira\\.nuget\\packages\\": {},
+    "C:\\Users\\bians\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
+      "projectUniqueName": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\TaskFlow.csproj",
       "projectName": "TaskFlow",
-      "projectPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
-      "packagesPath": "C:\\Users\\amira\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\obj\\",
+      "projectPath": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\TaskFlow.csproj",
+      "packagesPath": "C:\\Users\\bians\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\amira\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\bians\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1623,6 +1623,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -1643,7 +1648,7 @@
           },
           "Microsoft.IdentityModel.Tokens": {
             "target": "Package",
-            "version": "[7.4.1, )"
+            "version": "[7.5.1, )"
           },
           "MongoDB.Driver": {
             "target": "Package",
@@ -1655,7 +1660,7 @@
           },
           "System.IdentityModel.Tokens.Jwt": {
             "target": "Package",
-            "version": "[7.4.1, )"
+            "version": "[7.5.1, )"
           }
         },
         "imports": [
@@ -1677,7 +1682,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.201/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
