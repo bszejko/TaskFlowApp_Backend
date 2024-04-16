@@ -54,6 +54,31 @@ public async Task<IActionResult> Register([FromBody] User user)
     return Ok(new { message = "User registered successfully." });
 }
 
+[HttpPost("registerByAdmin")]
+public async Task<IActionResult> RegisterByAdmin([FromBody] User user)
+{
+    if (!ModelState.IsValid) //checks if the data sent in the user request is valid based on the model annotations
+    {
+        return BadRequest(ModelState);
+    }
+
+    var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
+    if (existingUser != null)
+    {
+        // if user already exists
+        return BadRequest("User already exists.");
+    }
+
+    // Setting default role as 'user'
+    user.Role = "user"; 
+
+    //hashing the password
+    user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
+    await _context.Users.InsertOneAsync(user);
+    return Ok(new { message = "User registered successfully." });
+}
+
 
 
     [HttpPost("login")]
