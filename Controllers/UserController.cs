@@ -136,12 +136,18 @@ public static string GenerateSecretKey()
     }
 }
     // GET: /users
-    [HttpGet("users")]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-    {
-        var users = await _context.Users.Find(_ => true).ToListAsync();
-        return Ok(users);
-    }
+   
+[HttpGet("users")]
+public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+{
+    // Tworzenie filtra dla roli "user" - admin do projektu może dodać tylko użytkownika o roli user
+    var filter = Builders<User>.Filter.Eq(u => u.Role, "user");
+
+    // Użycie filtra w zapytaniu do bazy danych
+    var users = await _context.Users.Find(filter).ToListAsync();
+
+    return Ok(users);
+}
 
 
 
