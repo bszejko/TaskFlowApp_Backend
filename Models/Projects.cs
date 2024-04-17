@@ -1,5 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using System;
+using System.Collections.Generic;
 
 namespace TaskFlow.Models
 {
@@ -9,10 +11,8 @@ namespace TaskFlow.Models
         {
             if (string.IsNullOrEmpty(projectName))
                 throw new ArgumentException("Project name cannot be null or empty.", nameof(projectName));
-
             if (string.IsNullOrEmpty(description))
                 throw new ArgumentException("Description cannot be null or empty.", nameof(description));
-
             if (deadline == DateTime.MinValue)
                 throw new ArgumentException("Deadline must be provided.", nameof(deadline));
 
@@ -20,9 +20,8 @@ namespace TaskFlow.Models
             Description = description;
             Deadline = deadline;
             TaskIds = new List<string>();
-            Members = new List<string>();
+            Members = new List<string>(); // Now storing member IDs, not User objects
         }
-
 
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
@@ -43,12 +42,9 @@ namespace TaskFlow.Models
         
         [BsonElement("taskIds")]
         [BsonRepresentation(BsonType.ObjectId)]
-        public List<string> TaskIds { get; set; } // Lista identyfikatorów zadań przypisanych do projektu
-
+        public List<string> TaskIds { get; set; }
 
         [BsonElement("members")]
-        public List<string> Members { get; set; }
-
+        public List<string> Members { get; set; } // This now holds IDs
     }
 }
-

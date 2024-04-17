@@ -18,20 +18,40 @@ namespace TaskFlow.Controllers
         {
             _context = context;
         }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateProject([FromBody] Projects project)
+[HttpPost("create")]
+public async Task<IActionResult> CreateProject([FromBody] Projects project)
+{
+    try
+    {
+        if (project.Members == null || project.Members.Count == 0)
         {
-            try
-            {
-                await _context.Projects.InsertOneAsync(project);
-                return Ok(new { message = "Project created successfully." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Failed to create project: {ex.Message}");
-            }
+            return BadRequest("Member IDs are required.");
         }
+
+        // Optional: Validate the existence of user IDs in the database
+        var validUserCount = await _context.Users.CountDocumentsAsync(u => project.Members.Contains(u.Id));
+        if (validUserCount != project.Members.Count)
+        {
+            return BadRequest("One or more member IDs are invalid.");
+        }
+
+        // Insert the new project
+        await _context.Projects.InsertOneAsync(project);
+        var projectId = project.Id; // Assuming Id is set after insertion
+
+        // Update user documents to include the new project ID
+        var filter = Builders<User>.Filter.In(u => u.Id, project.Members);
+        var update = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
+        await _context.Users.UpdateManyAsync(filter, update);
+
+        return Ok(new { message = "Project created successfully and users updated." });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest($"Failed to create project: {ex.Message}");
+    }
+}
+
 
         [HttpGet("get/{id}")]
         public async Task<IActionResult> GetProject(string id)
