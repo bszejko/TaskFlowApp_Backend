@@ -80,59 +80,61 @@ public async Task<IActionResult> RegisterByAdmin([FromBody] User user)
 }
 
 
-
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] User user)
+[HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] User loginUser)
+{
+    var existingUser = await _context.Users.Find(u => u.Email == loginUser.Email).FirstOrDefaultAsync();
+    if (existingUser != null && BCrypt.Net.BCrypt.Verify(loginUser.Password, existingUser.Password))
     {
-        
-        
-        var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync(); //Retrieves the user from MongoDB based on the provided email
-        if (existingUser != null && BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
-    {
-        
-        var token = GenerateJwtToken(existingUser); //generates a JWT token for the user
-        string firstName = existingUser.FirstName; 
+        var token = GenerateJwtToken(existingUser);
+        string firstName = existingUser.FirstName;
         string role = existingUser.Role;
-        
-        return Ok(new { 
-            token = token, 
-            message = "User authenticated successfully.",
-            firstName=firstName, //passing the user name so that it can be displayed on the homepage
-            role=role
 
+
+        HttpContext.Response.Cookies.Append("JWT", token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false, // Ensure using HTTPS
+            SameSite = SameSiteMode.None, // Needed for cross-origin where applicable
+            Path = "/", // Ensures cookie is sent for all paths
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        });
+
+
+
+
+        return Ok(new {
+            message = "User authenticated successfully.",
+            firstName,
+            role
         });
     }
-        return Unauthorized("Invalid credentials.");
-    }
 
-   private string GenerateJwtToken(User user)
+    return Unauthorized("Invalid credentials.");
+}
+
+private string GenerateJwtToken(User user)
 {
     var tokenHandler = new JwtSecurityTokenHandler();
     var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
     var tokenDescriptor = new SecurityTokenDescriptor
     {
-        Subject = new ClaimsIdentity(new Claim[] 
+        Subject = new ClaimsIdentity(new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Ensure this claim is correctly set
             new Claim(ClaimTypes.Email, user.Email),
+            // Additional claims can be added here
         }),
         Expires = DateTime.UtcNow.AddDays(7),
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
     };
+
     var token = tokenHandler.CreateToken(tokenDescriptor);
-    var tokenString = tokenHandler.WriteToken(token);
-
-    // Set cookie
-    HttpContext.Response.Cookies.Append("JWT", tokenString, new CookieOptions 
-    {
-        HttpOnly = true, // Ważne dla bezpieczeństwa, aby cookie nie było dostępne przez JavaScript
-        Secure = true, // Wymagane dla HTTPS
-        SameSite = SameSiteMode.Strict, // Ogranicza wysyłanie cookies do żądań pochodzących z tego samego źródła
-        Expires = DateTimeOffset.UtcNow.AddDays(7)
-    });
-
-    return tokenString;
+    return tokenHandler.WriteToken(token);
 }
+
+
+
 
 
 public static string GenerateSecretKey()

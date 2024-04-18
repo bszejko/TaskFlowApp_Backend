@@ -46,5 +46,9 @@ namespace TaskFlow.Models
 
         [BsonElement("members")]
         public List<string> Members { get; set; } // This now holds IDs
+
+        [BsonElement("createdBy")]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string CreatedBy { get; set; }
     }
 }

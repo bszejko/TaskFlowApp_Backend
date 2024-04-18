@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using TaskFlow.Data;
 using TaskFlow.Models;
@@ -10,47 +14,124 @@ namespace TaskFlow.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ProjectsController : ControllerBase
-    {
-        private readonly MongoDbContext _context;
-
-        public ProjectsController(MongoDbContext context)
-        {
-            _context = context;
-        }
-[HttpPost("create")]
-public async Task<IActionResult> CreateProject([FromBody] Projects project)
+  
+public class ProjectsController : ControllerBase
 {
+    private readonly MongoDbContext _context;
+    private readonly ILogger<ProjectsController> _logger;
+    private readonly IConfiguration _configuration;
+
+    public ProjectsController(MongoDbContext context, ILogger<ProjectsController> logger, IConfiguration configuration)
+    {
+        _context = context;
+        _logger = logger;
+        _configuration = configuration;
+    }
+
+    [HttpPost("create")]
+    public async Task<IActionResult> CreateProject([FromBody] Projects project)
+    {
+        var token = ExtractToken(Request);
+        if (string.IsNullOrEmpty(token))
+        {
+            return Unauthorized("Authentication token is missing.");
+        }
+
+        var userId = ValidateTokenAndGetUserId(token);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User ID could not be determined.");
+        }
+
+        _logger.LogInformation("User ID extracted: {UserId}", userId);
+
+        project.CreatedBy = userId;
+        try
+        {
+            if (project.Members == null || project.Members.Count == 0)
+            {
+                return BadRequest("Member IDs are required.");
+            }
+
+            var validUserCount = await _context.Users.CountDocumentsAsync(u => project.Members.Contains(u.Id));
+            if (validUserCount != project.Members.Count)
+            {
+                return BadRequest("One or more member IDs are invalid.");
+            }
+
+            await _context.Projects.InsertOneAsync(project);
+            var projectId = project.Id;
+
+            var filter = Builders<User>.Filter.In(u => u.Id, project.Members);
+            var update = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
+            await _context.Users.UpdateManyAsync(filter, update);
+
+            return Ok(new { message = "Project created successfully and users updated." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Failed to create project: {ex.Message}");
+        }
+    }
+
+    private string ExtractToken(HttpRequest request)
+    {
+        // Try to extract from cookie first
+        string token = request.Cookies["JWT"];
+        if (string.IsNullOrEmpty(token))
+        {
+            // Fallback to authorization header
+            var bearerToken = request.Headers["Authorization"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(bearerToken) && bearerToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = bearerToken.Substring("Bearer ".Length).Trim();
+            }
+        }
+        return token;
+    }
+
+    private string ValidateTokenAndGetUserId(string token)
+{
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
     try
     {
-        if (project.Members == null || project.Members.Count == 0)
+        tokenHandler.ValidateToken(token, new TokenValidationParameters
         {
-            return BadRequest("Member IDs are required.");
-        }
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        }, out SecurityToken validatedToken);
 
-        // Optional: Validate the existence of user IDs in the database
-        var validUserCount = await _context.Users.CountDocumentsAsync(u => project.Members.Contains(u.Id));
-        if (validUserCount != project.Members.Count)
+        var jwtToken = (JwtSecurityToken)validatedToken;
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "nameid"); // Adjusted to match the claim name in your JWT
+        if (userIdClaim == null)
         {
-            return BadRequest("One or more member IDs are invalid.");
+            _logger.LogError("User ID claim ('nameid') not found in token");
+            return null;
         }
-
-        // Insert the new project
-        await _context.Projects.InsertOneAsync(project);
-        var projectId = project.Id; // Assuming Id is set after insertion
-
-        // Update user documents to include the new project ID
-        var filter = Builders<User>.Filter.In(u => u.Id, project.Members);
-        var update = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
-        await _context.Users.UpdateManyAsync(filter, update);
-
-        return Ok(new { message = "Project created successfully and users updated." });
+        return userIdClaim.Value;
+    }
+    catch (SecurityTokenExpiredException ex)
+    {
+        _logger.LogError($"Token expired: {ex.Message}");
+        return null;
+    }
+    catch (SecurityTokenValidationException ex)
+    {
+        _logger.LogError($"Token validation failed: {ex.Message}");
+        return null;
     }
     catch (Exception ex)
     {
-        return BadRequest($"Failed to create project: {ex.Message}");
+        _logger.LogError($"An error occurred while validating token: {ex.Message}");
+        return null;
     }
 }
+
 
 
         [HttpGet("get/{id}")]
