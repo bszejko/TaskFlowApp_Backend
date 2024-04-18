@@ -2,44 +2,33 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TaskFlow.Data;
 
-
-
-    
-
- 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Konfiguracja JWT
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)  // Use cookies as the default scheme
+    .AddCookie(options =>
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")), // Użyj bezpiecznego klucza
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+    });
+
 
 // CORS configuration 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("MyAllowSpecificOrigins",
+    options.AddPolicy("AllowSpecificOrigin",
     corsBuilder =>
     {
         corsBuilder.WithOrigins("http://localhost:8100") // Replace with the origin of Ionic app
                    .AllowAnyHeader()
-                   .AllowAnyMethod();
+                   .AllowAnyMethod()
+                   .AllowCredentials();
     });
 });
 
@@ -47,8 +36,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-        
 
 // MongoDB configuration
 var mongoDbSettings = builder.Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
@@ -64,21 +51,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
 
-app.UseCors("MyAllowSpecificOrigins");
+
 
 app.UseAuthentication(); // Dodaj to przed UseAuthorization
 app.UseAuthorization();
 
 app.MapControllers();
 
-
 app.Run();
-
-
-
-
 
 // MongoDbSettings class
 public class MongoDbSettings
@@ -86,4 +69,3 @@ public class MongoDbSettings
     public required string ConnectionString { get; set; }
     public required string DatabaseName { get; set; }
 }
-

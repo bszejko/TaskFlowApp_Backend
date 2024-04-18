@@ -105,26 +105,35 @@ public async Task<IActionResult> RegisterByAdmin([FromBody] User user)
         return Unauthorized("Invalid credentials.");
     }
 
-   private string GenerateJwtToken(User user) //method for generating the token
+   private string GenerateJwtToken(User user)
 {
     var tokenHandler = new JwtSecurityTokenHandler();
-    var secret = _configuration["JwtConfig:Secret"]; 
-    var key = Encoding.ASCII.GetBytes(secret); 
+    var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
     var tokenDescriptor = new SecurityTokenDescriptor
     {
         Subject = new ClaimsIdentity(new Claim[] 
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email),
-           
         }),
         Expires = DateTime.UtcNow.AddDays(7),
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
     };
-
     var token = tokenHandler.CreateToken(tokenDescriptor);
-    return tokenHandler.WriteToken(token);
+    var tokenString = tokenHandler.WriteToken(token);
+
+    // Set cookie
+    HttpContext.Response.Cookies.Append("JWT", tokenString, new CookieOptions 
+    {
+        HttpOnly = true, // Ważne dla bezpieczeństwa, aby cookie nie było dostępne przez JavaScript
+        Secure = true, // Wymagane dla HTTPS
+        SameSite = SameSiteMode.Strict, // Ogranicza wysyłanie cookies do żądań pochodzących z tego samego źródła
+        Expires = DateTimeOffset.UtcNow.AddDays(7)
+    });
+
+    return tokenString;
 }
+
 
 public static string GenerateSecretKey()
 {
