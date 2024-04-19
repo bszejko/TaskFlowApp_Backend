@@ -94,7 +94,7 @@ public async Task<IActionResult> Login([FromBody] User loginUser)
         HttpContext.Response.Cookies.Append("JWT", token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = false, // Ensure using HTTPS
+            Secure = true, // Ensure using HTTPS
             SameSite = SameSiteMode.None, // Needed for cross-origin where applicable
             Path = "/", // Ensures cookie is sent for all paths
             Expires = DateTimeOffset.UtcNow.AddDays(7)

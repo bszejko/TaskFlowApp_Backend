@@ -29,50 +29,58 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateProject([FromBody] Projects project)
+public async Task<IActionResult> CreateProject([FromBody] Projects project)
+{
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
     {
-        var token = ExtractToken(Request);
-        if (string.IsNullOrEmpty(token))
-        {
-            return Unauthorized("Authentication token is missing.");
-        }
-
-        var userId = ValidateTokenAndGetUserId(token);
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized("User ID could not be determined.");
-        }
-
-        _logger.LogInformation("User ID extracted: {UserId}", userId);
-
-        project.CreatedBy = userId;
-        try
-        {
-            if (project.Members == null || project.Members.Count == 0)
-            {
-                return BadRequest("Member IDs are required.");
-            }
-
-            var validUserCount = await _context.Users.CountDocumentsAsync(u => project.Members.Contains(u.Id));
-            if (validUserCount != project.Members.Count)
-            {
-                return BadRequest("One or more member IDs are invalid.");
-            }
-
-            await _context.Projects.InsertOneAsync(project);
-            var projectId = project.Id;
-
-            var filter = Builders<User>.Filter.In(u => u.Id, project.Members);
-            var update = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
-            await _context.Users.UpdateManyAsync(filter, update);
-
-            return Ok(new { message = "Project created successfully and users updated." });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest($"Failed to create project: {ex.Message}");
-        }
+        return Unauthorized("Authentication token is missing.");
     }
+
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    _logger.LogInformation("User ID extracted: {UserId}", userId);
+
+    project.CreatedBy = userId;
+    try
+    {
+        if (project.Members == null || project.Members.Count == 0)
+        {
+            return BadRequest("Member IDs are required.");
+        }
+
+        var validUserCount = await _context.Users.CountDocumentsAsync(u => project.Members.Contains(u.Id));
+        if (validUserCount != project.Members.Count)
+        {
+            return BadRequest("One or more member IDs are invalid.");
+        }
+
+        // Insert the new project
+        await _context.Projects.InsertOneAsync(project);
+        var projectId = project.Id;
+
+        // Update the project IDs list for each member
+        var filterMembers = Builders<User>.Filter.In(u => u.Id, project.Members);
+        var updateMembers = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
+        await _context.Users.UpdateManyAsync(filterMembers, updateMembers);
+
+        // Update the ownerOf list for the project creator
+        var filterOwner = Builders<User>.Filter.Eq(u => u.Id, userId);
+        var updateOwner = Builders<User>.Update.Push(u => u.OwnerOf, projectId);
+        await _context.Users.UpdateOneAsync(filterOwner, updateOwner);
+
+        return Ok(new { message = "Project created successfully and users updated." });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest($"Failed to create project: {ex.Message}");
+    }
+}
+
 
     private string ExtractToken(HttpRequest request)
     {

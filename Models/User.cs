@@ -31,6 +31,9 @@ namespace TaskFlow.Models
         [BsonElement("projectIds")]
         public List<string>? ProjectIds { get; set; } // Lista identyfikatorów projektów, do których użytkownik jest przypisany
 
+        [BsonElement("ownerOf")]
+        public List<string> OwnerOf { get; set; } = new List<string>();
+
         // ...any other properties...
     }
 }
