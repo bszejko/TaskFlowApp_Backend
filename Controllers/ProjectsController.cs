@@ -9,6 +9,12 @@ using System.Text;
 using System.Threading.Tasks;
 using TaskFlow.Data;
 using TaskFlow.Models;
+using TaskFlow.ViewModels;
+using MongoDB.Driver;
+using MongoDB.Bson;
+
+
+
 
 namespace TaskFlow.Controllers
 {
@@ -193,5 +199,83 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
                 return BadRequest($"Failed to delete project: {ex.Message}");
             }
         }
+
+        [HttpGet("userProjects")]
+public async Task<IActionResult> GetUserProjects()
+{
+    // Extract the token directly from the HttpRequest
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Validate token and extract user ID
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    try
+    {
+        var projects = await _context.Projects
+                                     .Find(p => p.CreatedBy == userId)
+                                     .ToListAsync();
+
+        if (projects.Count == 0)
+        {
+            return NotFound("No projects found for this user.");
+        }
+
+        return Ok(projects); // Return the projects associated with the user
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
+        return BadRequest($"An error occurred: {ex.Message}");
     }
 }
+[HttpGet("{projectId}/members")]
+public async Task<IActionResult> GetProjectMembers(string projectId)
+{
+    try
+    {
+        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
+        if (project == null)
+        {
+            _logger.LogError($"Project with ID {projectId} not found.");
+            return NotFound("Project not found.");
+        }
+
+        if (project.Members == null || !project.Members.Any())
+        {
+            _logger.LogInformation($"No members found for project with ID {projectId}.");
+            return NotFound("No members found for this project.");
+        }
+
+        var memberFilter = Builders<User>.Filter.In(u => u.Id, project.Members);
+        var users = await _context.Users.Find(memberFilter).ToListAsync();
+
+        if (users == null || !users.Any())
+        {
+            _logger.LogInformation($"Users corresponding to member IDs in project {projectId} not found.");
+            return NotFound("Members not found.");
+        }
+
+        return Ok(users);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving project members: {ex.Message}", ex);
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+   
+}
+
+
+
+    }
+

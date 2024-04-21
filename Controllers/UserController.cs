@@ -160,6 +160,19 @@ public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     return Ok(users);
 }
 
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(string id)
+{
+    // Użycie _context do bezpośredniego dostępu do kolekcji Users w MongoDB i wyszukiwania po ID
+    var user = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
+    if (user == null)
+    {
+        return NotFound();
+    }
+    return Ok(user);
+}
+
+
 
 
 
