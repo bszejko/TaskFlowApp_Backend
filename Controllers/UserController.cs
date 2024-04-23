@@ -172,6 +172,16 @@ public async Task<IActionResult> GetById(string id)
     return Ok(user);
 }
 
+[HttpPost("logout")]
+public IActionResult Logout()
+{
+    // Usuń cookie z tokenem JWT
+    Response.Cookies.Delete("JWT");
+
+    // Opcjonalnie: Możesz też zwrócić odpowiedź informującą o sukcesie
+    return Ok(new { message = "Wylogowano pomyślnie." });
+}
+
 
 
 
