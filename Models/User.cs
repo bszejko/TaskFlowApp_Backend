@@ -35,5 +35,7 @@ namespace TaskFlow.Models
         public List<string> OwnerOf { get; set; } = new List<string>();
 
         // ...any other properties...
+        [BsonElement("tasks")]
+        public List<string> Tasks { get; set; }
     }
 }
