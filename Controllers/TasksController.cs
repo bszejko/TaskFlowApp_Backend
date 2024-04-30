@@ -44,16 +44,23 @@ public async Task<IActionResult> CreateTask([FromBody] Tasks task)
     }
 
     try
-    {// Insert the new task into the database
-await _context.Tasks.InsertOneAsync(task);
+    {
+        // Insert the new task into the database
+        await _context.Tasks.InsertOneAsync(task);
 
-// Update the user's tasks
-var filter = Builders<User>.Filter.Eq(u => u.Id, task.AssignedUserId);
-var update = Builders<User>.Update.Push(u => u.Tasks, task.Id);
-await _context.Users.UpdateOneAsync(filter, update);
+        // Update the user's tasks
+        var userFilter = Builders<User>.Filter.Eq(u => u.Id, task.AssignedUserId);
+        var userUpdate = Builders<User>.Update.Push(u => u.Tasks, task.Id);
+        await _context.Users.UpdateOneAsync(userFilter, userUpdate);
 
-// Return a simple success response
-return Ok("Task added successfully.");
+        // Update the project's taskIds
+        var projectFilter = Builders<Projects>.Filter.Eq(p => p.Id, task.ProjectId);
+        var projectUpdate = Builders<Projects>.Update.Push(p => p.TaskIds, task.Id);
+        await _context.Projects.UpdateOneAsync(projectFilter, projectUpdate);
+
+        // Return a simple success response
+        // Return a simple success response
+            return Ok(new { message = "Task added successfully." });
 
     }
     catch (MongoException mongoEx)
@@ -63,6 +70,15 @@ return Ok("Task added successfully.");
         return StatusCode(500, $"Database operation failed: {mongoEx.Message}");
     }
 }
+
+
+[HttpGet("user/{userId}/project/{projectId}")]
+public async Task<ActionResult<List<Tasks>>> GetTasksByUserAndProject(string userId, string projectId)
+{
+    var tasks = await _context.Tasks.Find(t => t.AssignedUserId == userId && t.ProjectId == projectId).ToListAsync();
+    return Ok(tasks);
+}
+
 
 
 

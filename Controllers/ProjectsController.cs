@@ -148,23 +148,6 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
 
 
 
-        [HttpGet("get/{id}")]
-        public async Task<IActionResult> GetProject(string id)
-        {
-            try
-            {
-                var project = await _context.Projects.Find(p => p.Id == id).FirstOrDefaultAsync();
-                if (project == null)
-                    return NotFound("Project not found.");
-
-                return Ok(project);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Failed to retrieve project: {ex.Message}");
-            }
-        }
-
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateProject(string id, [FromBody] Projects updatedProject)
         {
@@ -271,6 +254,48 @@ public async Task<IActionResult> GetProjectMembers(string projectId)
         return BadRequest($"An error occurred: {ex.Message}");
     }
 }
+
+[HttpGet("{projectId}/overdue-tasks")]
+public async Task<IActionResult> GetOverdueTasksForProject(string projectId)
+{
+    try
+    {
+        // Retrieve overdue tasks for the specified project from your database
+        var overdueTasks = await _context.Tasks.Find(task => task.ProjectId == projectId && task.Deadline < DateTime.UtcNow).ToListAsync();
+
+        if (overdueTasks == null || !overdueTasks.Any())
+        {
+            _logger.LogInformation($"No overdue tasks found for project with ID {projectId}.");
+            return NotFound("No overdue tasks found for this project.");
+        }
+
+        return Ok(overdueTasks);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving overdue tasks for project {projectId}: {ex.Message}", ex);
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+[HttpGet("get/{projectId}")]
+public async Task<IActionResult> GetProject(string projectId)
+{
+    try
+    {
+        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
+        if (project == null)
+            return NotFound("Project not found.");
+
+        return Ok(project);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest($"Failed to retrieve project: {ex.Message}");
+    }
+}
+
+
 
    
 }
