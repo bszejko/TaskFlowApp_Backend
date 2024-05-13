@@ -19,14 +19,21 @@ using Microsoft.Extensions.Configuration;
 public class UserController : ControllerBase
 {
     private readonly MongoDbContext _context;
+    private readonly ILogger<UserController> _logger;
 
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
 
-    public UserController(MongoDbContext context, IConfiguration configuration)
+
+    public UserController(MongoDbContext context,ILogger<UserController> logger, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _configuration = configuration;
+        _logger = logger;
+
+        _httpContextAccessor = httpContextAccessor;
+
     }
 
  [HttpPost("register")]
@@ -57,27 +64,64 @@ public async Task<IActionResult> Register([FromBody] User user)
 [HttpPost("registerByAdmin")]
 public async Task<IActionResult> RegisterByAdmin([FromBody] User user)
 {
-    if (!ModelState.IsValid) //checks if the data sent in the user request is valid based on the model annotations
+    // Sprawdzenie poprawności modelu
+    if (!ModelState.IsValid)
     {
         return BadRequest(ModelState);
     }
 
+    // Wyciągnięcie tokena JWT z nagłówka żądania
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Walidacja tokena i pobranie identyfikatora administratora
+    var adminId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(adminId))
+    {
+        return Unauthorized("Admin ID could not be determined.");
+    }
+
+    // Pobranie istniejącego użytkownika o podanym adresie e-mail
     var existingUser = await _context.Users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
     if (existingUser != null)
     {
-        // if user already exists
         return BadRequest("User already exists.");
     }
 
-    // Setting default role as 'user'
+    // Ustawienie domyślnej roli użytkownika jako 'user'
     user.Role = "user"; 
-
-    //hashing the password
+    
+    // Haszowanie hasła użytkownika
     user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
-    await _context.Users.InsertOneAsync(user);
+    // Wstawienie nowego użytkownika do bazy danych i pobranie identyfikatora
+    var result = await _context.Users.InsertOneAsync(user);
+    string newUserId = result.InsertedId.AsString;
+
+    // Pobranie istniejącego administratora z bazy danych
+    var admin = await _context.Users.Find(u => u.Id == adminId).FirstOrDefaultAsync();
+
+    // Dodanie identyfikatora nowego użytkownika do listy OwnerOf administratora
+    if (admin != null)
+    {
+        if (admin.OwnerOf == null)
+        {
+            admin.OwnerOf = new List<string>();
+        }
+        admin.OwnerOf.Add(newUserId);
+    }
+
+    // Aktualizacja rekordu administratora w bazie danych z nową listą OwnerOf
+    var filter = Builders<User>.Filter.Eq(u => u.Id, adminId);
+    var update = Builders<User>.Update.Set(u => u.OwnerOf, admin.OwnerOf);
+    await _context.Users.UpdateOneAsync(filter, update);
+
     return Ok(new { message = "User registered successfully." });
 }
+
 
 
 [HttpPost("login")]
@@ -121,7 +165,7 @@ private string GenerateJwtToken(User user)
     {
         Subject = new ClaimsIdentity(new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Ensure this claim is correctly set
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), 
             new Claim(ClaimTypes.Email, user.Email),
             // Additional claims can be added here
         }),
@@ -180,6 +224,64 @@ public IActionResult Logout()
 
     // Opcjonalnie: Możesz też zwrócić odpowiedź informującą o sukcesie
     return Ok(new { message = "Wylogowano pomyślnie." });
+}
+
+ private string ExtractToken(HttpRequest request)
+    {
+        // Try to extract from cookie first
+        string token = request.Cookies["JWT"];
+        if (string.IsNullOrEmpty(token))
+        {
+            // Fallback to authorization header
+            var bearerToken = request.Headers["Authorization"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(bearerToken) && bearerToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = bearerToken.Substring("Bearer ".Length).Trim();
+            }
+        }
+        return token;
+    }
+
+    private string ValidateTokenAndGetUserId(string token)
+{
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
+    try
+    {
+        tokenHandler.ValidateToken(token, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        }, out SecurityToken validatedToken);
+
+        var jwtToken = (JwtSecurityToken)validatedToken;
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "nameid"); // Adjusted to match the claim name in your JWT
+        if (userIdClaim == null)
+        {
+            _logger.LogError("User ID claim ('nameid') not found in token");
+            return null;
+        }
+        return userIdClaim.Value;
+    }
+    catch (SecurityTokenExpiredException ex)
+    {
+        _logger.LogError($"Token expired: {ex.Message}");
+        return null;
+    }
+    catch (SecurityTokenValidationException ex)
+    {
+        _logger.LogError($"Token validation failed: {ex.Message}");
+        return null;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while validating token: {ex.Message}");
+        return null;
+    }
 }
 
 

@@ -74,10 +74,10 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
         var updateMembers = Builders<User>.Update.Push(u => u.ProjectIds, projectId);
         await _context.Users.UpdateManyAsync(filterMembers, updateMembers);
 
-        // Update the ownerOf list for the project creator
-        var filterOwner = Builders<User>.Filter.Eq(u => u.Id, userId);
-        var updateOwner = Builders<User>.Update.Push(u => u.OwnerOf, projectId);
-        await _context.Users.UpdateOneAsync(filterOwner, updateOwner);
+        // // Update the ownerOf list for the project creator
+        // var filterOwner = Builders<User>.Filter.Eq(u => u.Id, userId);
+        // var updateOwner = Builders<User>.Update.Push(u => u.OwnerOf, projectId);
+        // await _context.Users.UpdateOneAsync(filterOwner, updateOwner);
 
         return Ok(new { message = "Project created successfully and users updated." });
     }
