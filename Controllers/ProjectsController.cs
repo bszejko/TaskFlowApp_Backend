@@ -183,7 +183,7 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
             }
         }
 
-        [HttpGet("userProjects")]
+[HttpGet("userProjects")]
 public async Task<IActionResult> GetUserProjects()
 {
     // Extract the token directly from the HttpRequest

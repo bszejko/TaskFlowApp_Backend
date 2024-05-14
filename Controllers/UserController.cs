@@ -11,6 +11,8 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
+using System.Linq;
 
 
 
@@ -97,9 +99,11 @@ public async Task<IActionResult> RegisterByAdmin([FromBody] User user)
     // Haszowanie hasła użytkownika
     user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
-    // Wstawienie nowego użytkownika do bazy danych i pobranie identyfikatora
-    var result = await _context.Users.InsertOneAsync(user);
-    string newUserId = result.InsertedId.AsString;
+   // Wstawienie nowego użytkownika do bazy danych
+    await _context.Users.InsertOneAsync(user);
+
+// Pobranie identyfikatora nowo wstawionego użytkownika
+    string newUserId = user.Id.ToString();
 
     // Pobranie istniejącego administratora z bazy danych
     var admin = await _context.Users.Find(u => u.Id == adminId).FirstOrDefaultAsync();
@@ -195,6 +199,7 @@ public static string GenerateSecretKey()
 [HttpGet("users")]
 public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 {
+
     // Tworzenie filtra dla roli "user" - admin do projektu może dodać tylko użytkownika o roli user
     var filter = Builders<User>.Filter.Eq(u => u.Role, "user");
 
@@ -203,6 +208,42 @@ public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 
     return Ok(users);
 }
+
+[HttpGet("ownerOf")]
+public async Task<ActionResult<IEnumerable<User>>> GetAdminOwnerOf()
+{
+    // Wyciągnięcie tokena JWT z nagłówka żądania
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Walidacja tokena i pobranie identyfikatora administratora
+    var adminId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(adminId))
+    {
+        return Unauthorized("Admin ID could not be determined.");
+    }
+
+    // Pobranie administratora z bazy danych na podstawie adminId
+    var admin = await _context.Users.Find(u => u.Id == adminId).FirstOrDefaultAsync();
+    if (admin == null)
+    {
+        return NotFound("Administrator not found.");
+    }
+
+        // Pobranie identyfikatorów użytkowników z OwnerOf
+    var userIds = admin.OwnerOf;
+
+    // Pobranie pełnych danych użytkowników na podstawie identyfikatorów
+    var users = await _context.Users.Find(u => userIds.Contains(u.Id)).ToListAsync();
+
+    // Zwrócenie listy użytkowników
+    return Ok(users);
+}
+
+
 
 [HttpGet("{id}")]
 public async Task<IActionResult> GetById(string id)
