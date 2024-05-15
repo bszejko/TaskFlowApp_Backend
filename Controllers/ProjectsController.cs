@@ -219,6 +219,44 @@ public async Task<IActionResult> GetUserProjects()
         return BadRequest($"An error occurred: {ex.Message}");
     }
 }
+
+
+[HttpGet("assignedProjects")]
+public async Task<IActionResult> GetAssignedProjects()
+{
+    // Extract the token directly from the HttpRequest
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Validate token and extract user ID
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    try
+    {
+        var projects = await _context.Projects
+                                     .Find(p => p.Members.Contains(userId))
+                                     .ToListAsync();
+
+        if (projects.Count == 0)
+        {
+            return NotFound("No projects found for this user.");
+        }
+
+        return Ok(projects); // Return the projects associated with the user
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
 [HttpGet("{projectId}/members")]
 public async Task<IActionResult> GetProjectMembers(string projectId)
 {
