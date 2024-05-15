@@ -1585,23 +1585,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\amira\\.nuget\\packages\\": {},
+    "C:\\Users\\bians\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
+      "projectUniqueName": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\TaskFlow.csproj",
       "projectName": "TaskFlow",
-      "projectPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
-      "packagesPath": "C:\\Users\\amira\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\obj\\",
+      "projectPath": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\TaskFlow.csproj",
+      "packagesPath": "C:\\Users\\bians\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\bians\\Desktop\\TaskFlowBackend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\amira\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\bians\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1623,6 +1623,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -1677,7 +1682,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.201/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
