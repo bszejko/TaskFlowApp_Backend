@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+
+
 // Configure JWT authentication
 builder.Services.AddAuthentication(options =>
 {
