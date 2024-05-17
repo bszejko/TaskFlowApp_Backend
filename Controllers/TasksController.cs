@@ -5,6 +5,10 @@ using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
+using TaskFlow.DTOs;
+
+
 
 [ApiController]
 [Route("[controller]")]
@@ -218,6 +222,29 @@ public async Task<IActionResult> DeleteTask(string id)
         return null;
     }
 }
+
+// Using the existing UpdateTask endpoint to handle status updates too
+
+[HttpPut("update-status/{id:length(24)}")]
+public async Task<IActionResult> UpdateTaskStatus(string id, [FromBody] StatusUpdateDto update)
+{
+    var task = await _context.Tasks.Find(t => t.Id == id).FirstOrDefaultAsync();
+    if (task == null)
+    {
+        return NotFound($"Task with ID {id} not found.");
+    }
+
+    var updateDefinition = Builders<Tasks>.Update.Set(t => t.Status, update.Status);
+    await _context.Tasks.UpdateOneAsync(t => t.Id == id, updateDefinition);
+    return NoContent(); // or Ok() to indicate success more clearly
+}
+
+
+
+
+
+
+
 
 }
 
