@@ -99,11 +99,53 @@ public async Task<ActionResult<List<Tasks>>> GetTodayTasksByProject(string proje
     var userId = ValidateTokenAndGetUserId(token);
     if (string.IsNullOrEmpty(userId))
     {
-        return Unauthorized("Admin ID could not be determined.");
+        return Unauthorized("User ID could not be determined.");
     }
 
     return await FetchTasks(userId, projectId);
 }
+
+[HttpGet("project/{projectId}/all-tasks")]
+public async Task<ActionResult<List<Tasks>>> GetAllTasksByProject(string projectId)
+{
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Validate the token and get the user ID from it
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    try
+    {
+        var tasks = await _context.Tasks
+            .Find(t => t.AssignedUserId == userId && t.ProjectId == projectId)
+            .ToListAsync();
+
+        if (!tasks.Any())
+        {
+            return Ok($"No tasks found for project ID {projectId} assigned to the current user.");
+        }
+
+        return Ok(tasks);
+    }
+    catch (MongoException mongoEx)
+    {
+        _logger.LogError($"MongoDB exception: {mongoEx.Message}");
+        return StatusCode(500, $"Database operation failed: {mongoEx.Message}");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while processing your request: {ex}");
+        return StatusCode(500, "An error occurred while processing your request.");
+    }
+}
+
 
 [HttpPut("{id:length(24)}")]
 public async Task<IActionResult> UpdateTask(string id, [FromBody] Tasks updatedTask)
