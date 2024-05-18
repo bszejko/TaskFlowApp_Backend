@@ -160,42 +160,7 @@ public async Task<IActionResult> Login([FromBody] User loginUser)
 
     return Unauthorized("Invalid credentials.");
 }
-
-private string GenerateJwtToken(User user)
-{
-    var tokenHandler = new JwtSecurityTokenHandler();
-    var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
-    var tokenDescriptor = new SecurityTokenDescriptor
-    {
-        Subject = new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), 
-            new Claim(ClaimTypes.Email, user.Email),
-            // Additional claims can be added here
-        }),
-        Expires = DateTime.UtcNow.AddDays(7),
-        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-    };
-
-    var token = tokenHandler.CreateToken(tokenDescriptor);
-    return tokenHandler.WriteToken(token);
-}
-
-
-
-
-
-public static string GenerateSecretKey()
-{
-    var randomNumber = new byte[32]; // 32 bajty = 256 bitów
-    using (var rng = new RNGCryptoServiceProvider())
-    {
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
-    }
-}
-    // GET: /users
-   
+  
 [HttpGet("users")]
 public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 {
@@ -244,7 +209,6 @@ public async Task<ActionResult<IEnumerable<User>>> GetAdminOwnerOf()
 }
 
 
-
 [HttpGet("{id}")]
 public async Task<IActionResult> GetById(string id)
 {
@@ -266,6 +230,9 @@ public IActionResult Logout()
     // Opcjonalnie: Możesz też zwrócić odpowiedź informującą o sukcesie
     return Ok(new { message = "Wylogowano pomyślnie." });
 }
+
+
+//METODY
 
  private string ExtractToken(HttpRequest request)
     {
@@ -325,6 +292,36 @@ public IActionResult Logout()
     }
 }
 
+
+private string GenerateJwtToken(User user)
+{
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), 
+            new Claim(ClaimTypes.Email, user.Email),
+            // Additional claims can be added here
+        }),
+        Expires = DateTime.UtcNow.AddDays(7),
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return tokenHandler.WriteToken(token);
+}
+
+public static string GenerateSecretKey()
+{
+    var randomNumber = new byte[32]; // 32 bajty = 256 bitów
+    using (var rng = new RNGCryptoServiceProvider())
+    {
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+}
 
 
 

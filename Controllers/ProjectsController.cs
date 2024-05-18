@@ -34,7 +34,7 @@ public class ProjectsController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost("create")]
+ [HttpPost("create")]
 public async Task<IActionResult> CreateProject([FromBody] Projects project)
 {
     var token = ExtractToken(Request);
@@ -88,7 +88,196 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
 }
 
 
-    private string ExtractToken(HttpRequest request)
+
+[HttpPut("update/{id}")]
+     public async Task<IActionResult> UpdateProject(string id, [FromBody] Projects updatedProject)
+     {
+         try
+        {
+             updatedProject.Id = id;
+            var result = await _context.Projects.ReplaceOneAsync(p => p.Id == id, updatedProject);
+            if (result.ModifiedCount == 0)
+                return NotFound("Project not found.");
+
+            return Ok(new { message = "Project updated successfully." });
+        }
+         catch (Exception ex)
+        {
+             return BadRequest($"Failed to update project: {ex.Message}");
+          }
+ }
+
+ [HttpDelete("delete/{id}")]
+     public async Task<IActionResult> DeleteProject(string id)
+     {
+         try
+        {
+             var result = await _context.Projects.DeleteOneAsync(p => p.Id == id);
+            if (result.DeletedCount == 0) //ile dokumentów zostało usuniętych, ówny 1, jeśli dokument został pomyślnie usunięty, lub 0, jeśli dokument o podanym identyfikatorze nie został znaleziony
+                return NotFound("Project not found.");
+
+             return Ok(new { message = "Project deleted successfully." });
+         }
+        catch (Exception ex)
+         {
+             return BadRequest($"Failed to delete project: {ex.Message}");
+         }
+ }
+
+[HttpGet("userProjects")]
+public async Task<IActionResult> GetUserProjects()
+{
+    // Extract the token directly from the HttpRequest
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Validate token and extract user ID
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    try
+    {
+        var projects = await _context.Projects
+                                     .Find(p => p.CreatedBy == userId)
+                                     .ToListAsync();
+
+        if (projects.Count == 0)
+        {
+            return Ok("No projects found for this user.");
+        }
+
+        return Ok(projects); // Return the projects associated with the user
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+
+[HttpGet("assignedProjects")]
+public async Task<IActionResult> GetAssignedProjects()
+{
+    // Extract the token directly from the HttpRequest
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
+    {
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    // Validate token and extract user ID
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
+    }
+
+    try
+    {
+        var projects = await _context.Projects
+                                     .Find(p => p.Members.Contains(userId))
+                                     .ToListAsync();
+
+        if (projects.Count == 0)
+        {
+            return Ok("No projects found for this user.");
+        }
+
+        return Ok(projects); // Return the projects associated with the user
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+[HttpGet("{projectId}/members")]
+public async Task<IActionResult> GetProjectMembers(string projectId)
+{
+    try
+    {
+        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
+        if (project == null)
+        {
+            _logger.LogError($"Project with ID {projectId} not found.");
+            return NotFound("Project not found.");
+        }
+
+        if (project.Members == null || !project.Members.Any())
+        {
+            _logger.LogInformation($"No members found for project with ID {projectId}.");
+            return Ok("No members found for this project.");
+        }
+
+        var memberFilter = Builders<User>.Filter.In(u => u.Id, project.Members);
+        var users = await _context.Users.Find(memberFilter).ToListAsync();
+
+        if (users == null || !users.Any())
+        {
+            _logger.LogInformation($"Users corresponding to member IDs in project {projectId} not found.");
+            return NotFound("Members not found.");
+        }
+
+        return Ok(users);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving project members: {ex.Message}", ex);
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+[HttpGet("{projectId}/overdue-tasks")]
+public async Task<IActionResult> GetOverdueTasksForProject(string projectId)
+{
+    try
+    {
+        // Retrieve overdue tasks for the specified project from your database
+        var overdueTasks = await _context.Tasks.Find(task => task.ProjectId == projectId && task.Deadline < DateTime.UtcNow).ToListAsync();
+
+        if (overdueTasks == null || !overdueTasks.Any())
+        {
+            _logger.LogInformation($"No overdue tasks found for project with ID {projectId}.");
+            return Ok("No overdue tasks found for this project.");
+        }
+
+        return Ok(overdueTasks);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while retrieving overdue tasks for project {projectId}: {ex.Message}", ex);
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+[HttpGet("get/{projectId}")]
+public async Task<IActionResult> GetProject(string projectId)
+{
+    try
+    {
+        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
+        if (project == null)
+            return NotFound("Project not found.");
+
+        return Ok(project);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest($"Failed to retrieve project: {ex.Message}");
+    }
+}
+
+//METODY
+
+private string ExtractToken(HttpRequest request)
     {
         // Try to extract from cookie first
         string token = request.Cookies["JWT"];
@@ -146,199 +335,8 @@ public async Task<IActionResult> CreateProject([FromBody] Projects project)
     }
 }
 
-
-
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateProject(string id, [FromBody] Projects updatedProject)
-        {
-            try
-            {
-                updatedProject.Id = id;
-                var result = await _context.Projects.ReplaceOneAsync(p => p.Id == id, updatedProject);
-                if (result.ModifiedCount == 0)
-                    return NotFound("Project not found.");
-
-                return Ok(new { message = "Project updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Failed to update project: {ex.Message}");
-            }
-        }
-
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> DeleteProject(string id)
-        {
-            try
-            {
-                var result = await _context.Projects.DeleteOneAsync(p => p.Id == id);
-                if (result.DeletedCount == 0) //ile dokumentów zostało usuniętych, ówny 1, jeśli dokument został pomyślnie usunięty, lub 0, jeśli dokument o podanym identyfikatorze nie został znaleziony
-                    return NotFound("Project not found.");
-
-                return Ok(new { message = "Project deleted successfully." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Failed to delete project: {ex.Message}");
-            }
-        }
-
-[HttpGet("userProjects")]
-public async Task<IActionResult> GetUserProjects()
-{
-    // Extract the token directly from the HttpRequest
-    var token = ExtractToken(Request);
-    if (string.IsNullOrEmpty(token))
-    {
-        return Unauthorized("Authentication token is missing.");
-    }
-
-    // Validate token and extract user ID
-    var userId = ValidateTokenAndGetUserId(token);
-    if (string.IsNullOrEmpty(userId))
-    {
-        return Unauthorized("User ID could not be determined.");
-    }
-
-    try
-    {
-        var projects = await _context.Projects
-                                     .Find(p => p.CreatedBy == userId)
-                                     .ToListAsync();
-
-        if (projects.Count == 0)
-        {
-            return NotFound("No projects found for this user.");
-        }
-
-        return Ok(projects); // Return the projects associated with the user
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
-        return BadRequest($"An error occurred: {ex.Message}");
-    }
-}
-
-
-[HttpGet("assignedProjects")]
-public async Task<IActionResult> GetAssignedProjects()
-{
-    // Extract the token directly from the HttpRequest
-    var token = ExtractToken(Request);
-    if (string.IsNullOrEmpty(token))
-    {
-        return Unauthorized("Authentication token is missing.");
-    }
-
-    // Validate token and extract user ID
-    var userId = ValidateTokenAndGetUserId(token);
-    if (string.IsNullOrEmpty(userId))
-    {
-        return Unauthorized("User ID could not be determined.");
-    }
-
-    try
-    {
-        var projects = await _context.Projects
-                                     .Find(p => p.Members.Contains(userId))
-                                     .ToListAsync();
-
-        if (projects.Count == 0)
-        {
-            return NotFound("No projects found for this user.");
-        }
-
-        return Ok(projects); // Return the projects associated with the user
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError($"An error occurred while retrieving user projects: {ex.Message}");
-        return BadRequest($"An error occurred: {ex.Message}");
-    }
-}
-[HttpGet("{projectId}/members")]
-public async Task<IActionResult> GetProjectMembers(string projectId)
-{
-    try
-    {
-        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
-        if (project == null)
-        {
-            _logger.LogError($"Project with ID {projectId} not found.");
-            return NotFound("Project not found.");
-        }
-
-        if (project.Members == null || !project.Members.Any())
-        {
-            _logger.LogInformation($"No members found for project with ID {projectId}.");
-            return NotFound("No members found for this project.");
-        }
-
-        var memberFilter = Builders<User>.Filter.In(u => u.Id, project.Members);
-        var users = await _context.Users.Find(memberFilter).ToListAsync();
-
-        if (users == null || !users.Any())
-        {
-            _logger.LogInformation($"Users corresponding to member IDs in project {projectId} not found.");
-            return NotFound("Members not found.");
-        }
-
-        return Ok(users);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError($"An error occurred while retrieving project members: {ex.Message}", ex);
-        return BadRequest($"An error occurred: {ex.Message}");
-    }
-}
-
-[HttpGet("{projectId}/overdue-tasks")]
-public async Task<IActionResult> GetOverdueTasksForProject(string projectId)
-{
-    try
-    {
-        // Retrieve overdue tasks for the specified project from your database
-        var overdueTasks = await _context.Tasks.Find(task => task.ProjectId == projectId && task.Deadline < DateTime.UtcNow).ToListAsync();
-
-        if (overdueTasks == null || !overdueTasks.Any())
-        {
-            _logger.LogInformation($"No overdue tasks found for project with ID {projectId}.");
-            return NotFound("No overdue tasks found for this project.");
-        }
-
-        return Ok(overdueTasks);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError($"An error occurred while retrieving overdue tasks for project {projectId}: {ex.Message}", ex);
-        return BadRequest($"An error occurred: {ex.Message}");
-    }
-}
-
-[HttpGet("get/{projectId}")]
-public async Task<IActionResult> GetProject(string projectId)
-{
-    try
-    {
-        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
-        if (project == null)
-            return NotFound("Project not found.");
-
-        return Ok(project);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest($"Failed to retrieve project: {ex.Message}");
-    }
-}
-
-
-
    
 }
-
-
 
     }
 

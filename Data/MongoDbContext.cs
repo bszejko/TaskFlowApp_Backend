@@ -18,6 +18,8 @@ namespace TaskFlow.Data
         public IMongoCollection<Projects> Projects => _database.GetCollection<Projects>("Projects");
         public IMongoCollection<Tasks> Tasks => _database.GetCollection<Tasks>("Tasks");
 
+         public IMongoCollection<ArchivedTasks> ArchivedTasks => _database.GetCollection<ArchivedTasks>("ArchivedTasks");
+
         public async Task<IEnumerable<T>> FindAsync<T>(string collectionName, Expression<Func<T, bool>> filterExpression) //wyszukiwania danych w kolekcji MongoDB na podstawie określonego filtru, zwraca kolekcję dokumentów spełniających kryteria
         {
             var collection = _database.GetCollection<T>(collectionName);

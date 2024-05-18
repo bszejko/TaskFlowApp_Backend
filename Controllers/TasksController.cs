@@ -5,8 +5,8 @@ using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Bson;
 using TaskFlow.DTOs;
+using System.Linq.Expressions;
 
 
 
@@ -25,7 +25,7 @@ public class TasksController : ControllerBase
          _logger = logger;
     }
 
-    [HttpGet]
+[HttpGet]
 public async Task<ActionResult<List<Tasks>>> GetAllTasks()
 {
     var tasks = await _context.Tasks.Find(_ => true).ToListAsync();
@@ -42,6 +42,7 @@ public async Task<ActionResult<Tasks>> GetTaskById(string id)
     }
     return Ok(task);
 }
+
 [HttpPost("create")]
 public async Task<IActionResult> CreateTask([FromBody] Tasks task)
 {
@@ -52,15 +53,15 @@ public async Task<IActionResult> CreateTask([FromBody] Tasks task)
 
     try
     {
-        // Insert the new task into the database
+        // Inserting the new task into the database
         await _context.Tasks.InsertOneAsync(task);
 
-        // Update the user's tasks
+        // Updating the user's tasks
         var userFilter = Builders<User>.Filter.Eq(u => u.Id, task.AssignedUserId);
         var userUpdate = Builders<User>.Update.Push(u => u.Tasks, task.Id);
         await _context.Users.UpdateOneAsync(userFilter, userUpdate);
 
-        // Update the project's taskIds
+        // Updating the project's taskIds
         var projectFilter = Builders<Projects>.Filter.Eq(p => p.Id, task.ProjectId);
         var projectUpdate = Builders<Projects>.Update.Push(p => p.TaskIds, task.Id);
         await _context.Projects.UpdateOneAsync(projectFilter, projectUpdate);
@@ -77,7 +78,6 @@ public async Task<IActionResult> CreateTask([FromBody] Tasks task)
         return StatusCode(500, $"Database operation failed: {mongoEx.Message}");
     }
 }
-
 
 [HttpGet("user/{userId}/project/{projectId}")]
 public async Task<ActionResult<List<Tasks>>> GetTasksByUserAndProject(string userId, string projectId)
@@ -102,42 +102,8 @@ public async Task<ActionResult<List<Tasks>>> GetTodayTasksByProject(string proje
         return Unauthorized("Admin ID could not be determined.");
     }
 
-    // Proceed with fetching tasks using the extracted user ID and project ID
     return await FetchTasks(userId, projectId);
 }
-
-private async Task<ActionResult<List<Tasks>>> FetchTasks(string userId, string projectId)
-{
-    if (string.IsNullOrEmpty(projectId))
-    {
-        _logger.LogWarning("Project ID not provided");
-        return BadRequest("Project ID must be provided.");
-    }
-
-    try
-    {
-        DateTime today = DateTime.UtcNow.Date;
-        DateTime tomorrow = today.AddDays(1);
-
-        var tasks = await _context.Tasks
-            .Find(t => t.AssignedUserId == userId && t.ProjectId == projectId && t.Deadline >= today && t.Deadline < tomorrow)
-            .ToListAsync();
-
-        if (tasks == null || !tasks.Any())
-        {
-            _logger.LogWarning("No tasks found for the provided user and project on today's date");
-            return NotFound("No tasks found for this user and project on today's date.");
-        }
-
-        return Ok(tasks);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError($"An error occurred while processing your request: {ex}");
-        return StatusCode(500, "An error occurred while processing your request.");
-    }
-}
-
 
 [HttpPut("{id:length(24)}")]
 public async Task<IActionResult> UpdateTask(string id, [FromBody] Tasks updatedTask)
@@ -164,9 +130,105 @@ public async Task<IActionResult> DeleteTask(string id)
     return NoContent();
 }
 
- private string ExtractToken(HttpRequest request)
+ 
+[HttpPut("update-status/{id:length(24)}")]
+public async Task<IActionResult> UpdateTaskStatus(string id, [FromBody] StatusUpdateDto update)
+{
+    var task = await _context.Tasks.Find(t => t.Id == id).FirstOrDefaultAsync();
+    if (task == null)
     {
-        // Try to extract from cookie first
+        return NotFound($"Task with ID {id} not found.");
+    }
+
+    var updateDefinition = Builders<Tasks>.Update.Set(t => t.Status, update.Status);
+    await _context.Tasks.UpdateOneAsync(t => t.Id == id, updateDefinition);
+    return NoContent(); // or Ok() to indicate success more clearly
+}
+
+[HttpPost("archive-and-delete-completed-tasks")]
+public async Task<IActionResult> ArchiveAndDeleteCompletedTasks()
+{
+    try
+    {
+        // Define the filter to find completed tasks with a deadline that has already passed
+        var filter = Builders<Tasks>.Filter.And(
+            Builders<Tasks>.Filter.Eq(t => t.Status, "completed"),
+            Builders<Tasks>.Filter.Lt(t => t.Deadline, DateTime.UtcNow)
+        );
+
+        var tasksToArchive = await _context.Tasks.Find(filter).ToListAsync();
+
+        if (!tasksToArchive.Any())
+        {
+            return Ok(new { success = true, message = "No completed tasks with past deadlines to archive." });
+        }
+
+        foreach (var task in tasksToArchive)
+        {
+            var archivedTask = new ArchivedTasks
+            {
+                TaskName = task.TaskName,
+                Description = task.Description,
+                ProjectId = task.ProjectId,
+                AssignedUserId = task.AssignedUserId,
+                Deadline = task.Deadline,
+                Status = task.Status
+            };
+
+            // Insert the task into the ArchivedTasks collection
+            await _context.ArchivedTasks.InsertOneAsync(archivedTask);
+            
+            // Delete the task from the Tasks collection
+            await _context.Tasks.DeleteOneAsync(t => t.Id == task.Id);
+        }
+
+        return Ok(new { success = true, message = $"Archived and deleted {tasksToArchive.Count} completed tasks." });
+    }
+    catch (Exception ex)
+    {
+        // Log the exception details for debugging
+        _logger.LogError("Failed to archive and delete tasks: " + ex.Message);
+        return StatusCode(500, new { success = false, message = "An error occurred while trying to archive and delete tasks." });
+    }
+}
+
+//METODY
+
+private async Task<ActionResult<List<Tasks>>> FetchTasks(string userId, string projectId)
+{
+    if (string.IsNullOrEmpty(projectId))
+    {
+        _logger.LogWarning("Project ID not provided");
+        return BadRequest("Project ID must be provided.");
+    }
+
+    try
+    {
+        DateTime today = DateTime.UtcNow.Date;
+        DateTime tomorrow = today.AddDays(1);
+
+        var tasks = await _context.Tasks
+            .Find(t => t.AssignedUserId == userId && t.ProjectId == projectId && t.Deadline >= today && t.Deadline < tomorrow)
+            .ToListAsync();
+
+        if (tasks == null || !tasks.Any())
+        {
+           
+            return Ok("No tasks found for this user and project on today's date.");
+        }
+
+        return Ok(tasks);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while processing your request: {ex}");
+        return StatusCode(500, "An error occurred while processing your request.");
+    }
+}
+
+private string ExtractToken(HttpRequest request)
+    {
+        //  Extracting the cookie
         string token = request.Cookies["JWT"];
         if (string.IsNullOrEmpty(token))
         {
@@ -174,7 +236,7 @@ public async Task<IActionResult> DeleteTask(string id)
             var bearerToken = request.Headers["Authorization"].FirstOrDefault();
             if (!string.IsNullOrEmpty(bearerToken) && bearerToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
 {
-    token = bearerToken["Bearer ".Length..].Trim();  // More robust trimming
+    token = bearerToken["Bearer ".Length..].Trim();  
 }
 
         }
@@ -198,7 +260,7 @@ public async Task<IActionResult> DeleteTask(string id)
         }, out SecurityToken validatedToken);
 
         var jwtToken = (JwtSecurityToken)validatedToken;
-        var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "nameid"); // Adjusted to match the claim name in your JWT
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "nameid"); 
         if (userIdClaim == null)
         {
             _logger.LogError("User ID claim ('nameid') not found in token");
@@ -223,28 +285,10 @@ public async Task<IActionResult> DeleteTask(string id)
     }
 }
 
-// Using the existing UpdateTask endpoint to handle status updates too
-
-[HttpPut("update-status/{id:length(24)}")]
-public async Task<IActionResult> UpdateTaskStatus(string id, [FromBody] StatusUpdateDto update)
-{
-    var task = await _context.Tasks.Find(t => t.Id == id).FirstOrDefaultAsync();
-    if (task == null)
-    {
-        return NotFound($"Task with ID {id} not found.");
-    }
-
-    var updateDefinition = Builders<Tasks>.Update.Set(t => t.Status, update.Status);
-    await _context.Tasks.UpdateOneAsync(t => t.Id == id, updateDefinition);
-    return NoContent(); // or Ok() to indicate success more clearly
-}
-
-
-
-
-
-
 
 
 }
+
+
+
 
