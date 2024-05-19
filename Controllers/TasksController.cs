@@ -146,6 +146,36 @@ public async Task<ActionResult<List<Tasks>>> GetAllTasksByProject(string project
     }
 }
 
+[HttpGet("project/{projectId}/all-tasks-admin")]
+public async Task<ActionResult<List<Tasks>>> GetAllTasksForProjectAdmin(string projectId)
+{
+    
+    try
+    {
+        var tasks = await _context.Tasks
+            .Find(t => t.ProjectId == projectId)
+            .ToListAsync();
+
+        if (!tasks.Any())
+        {
+            return Ok($"No tasks found for project ID {projectId}.");
+        }
+
+        return Ok(tasks);
+    }
+    catch (MongoException mongoEx)
+    {
+        _logger.LogError($"MongoDB exception: {mongoEx.Message}");
+        return StatusCode(500, $"Database operation failed: {mongoEx.Message}");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"An error occurred while processing your request: {ex}");
+        return StatusCode(500, "An error occurred while processing your request.");
+    }
+}
+
+
 
 [HttpPut("{id:length(24)}")]
 public async Task<IActionResult> UpdateTask(string id, [FromBody] Tasks updatedTask)

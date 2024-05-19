@@ -245,7 +245,7 @@ public async Task<IActionResult> GetOverdueTasksForProject(string projectId)
 
         if (overdueTasks == null || !overdueTasks.Any())
         {
-            _logger.LogInformation($"No overdue tasks found for project with ID {projectId}.");
+          
             return Ok("No overdue tasks found for this project.");
         }
 
