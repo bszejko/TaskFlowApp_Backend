@@ -25,6 +25,8 @@ public class UserController : ControllerBase
 
     private readonly IConfiguration _configuration;
     private readonly IHttpContextAccessor _httpContextAccessor;
+private readonly IMongoCollection<User> _usersCollection;
+
 
 
 
@@ -33,6 +35,7 @@ public class UserController : ControllerBase
         _context = context;
         _configuration = configuration;
         _logger = logger;
+        _usersCollection = _context.Users;
 
         _httpContextAccessor = httpContextAccessor;
 
@@ -266,6 +269,22 @@ public IActionResult Logout()
     // Opcjonalnie: Możesz też zwrócić odpowiedź informującą o sukcesie
     return Ok(new { message = "Wylogowano pomyślnie." });
 }
+
+[HttpDelete("delete")]
+public async Task<IActionResult> DeleteUser(string id)
+{
+    // Check if user exists
+    var user = await _usersCollection.Find(u => u.Id == id).FirstOrDefaultAsync();
+    if (user == null)
+    {
+        return NotFound();
+    }
+    // Delete user
+    await _usersCollection.DeleteOneAsync(u => u.Id == id);
+    return Ok(new { message = "User deleted successfully." });
+}
+
+
 
  private string ExtractToken(HttpRequest request)
     {
