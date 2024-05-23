@@ -1,1 +1,17 @@
+# Ignorowanie plików binarnych i kompilacji
+bin/
 obj/
+
+*.pdb
+*.exe
+*.dll
+*.cache
+*.json
+*.editorconfig
+*.csproj.FileListAbsolute.txt
+*.genruntimeconfig.cache
+*.nuget.*
+*.AssemblyInfoInputs.cache
+*.CoreCompileInputs.cache
+*.assets.cache
+*.sourcelink.json

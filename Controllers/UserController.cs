@@ -13,6 +13,8 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+
 
 
 
@@ -250,6 +252,45 @@ public async Task<IActionResult> DeleteUser(string id)
     // Delete user
     await _usersCollection.DeleteOneAsync(u => u.Id == id);
     return Ok(new { message = "User deleted successfully." });
+}
+
+[HttpPost("change-password")]
+[Authorize]
+public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(ModelState);
+    }
+
+    // Sprawdź, czy użytkownik jest zalogowany i pobierz jego identyfikator
+    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userId == null)
+    {
+        return Unauthorized("User is not logged in.");
+    }
+
+    // Pobierz użytkownika z bazy danych
+    var user = await _context.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+    if (user == null)
+    {
+        return NotFound("User not found.");
+    }
+
+    // Sprawdź, czy obecne hasło jest poprawne
+    if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.Password))
+    {
+        return BadRequest("Invalid current password.");
+    }
+
+    // Zaktualizuj hasło użytkownika
+    user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+
+    // Zapisz zmiany w bazie danych
+    var update = Builders<User>.Update.Set(u => u.Password, user.Password);
+    await _context.Users.UpdateOneAsync(u => u.Id == userId, update);
+
+     return Ok(new { message = "Password changed successfully." });
 }
 
 
