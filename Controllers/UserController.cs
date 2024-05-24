@@ -166,6 +166,7 @@ public async Task<IActionResult> Login([FromBody] User loginUser)
     return Unauthorized("Invalid credentials.");
 }
   
+
 [HttpGet("users")]
 public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 {
@@ -255,7 +256,6 @@ public async Task<IActionResult> DeleteUser(string id)
 }
 
 [HttpPost("change-password")]
-[Authorize]
 public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
 {
     if (!ModelState.IsValid)
@@ -263,11 +263,17 @@ public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel m
         return BadRequest(ModelState);
     }
 
-    // Sprawdź, czy użytkownik jest zalogowany i pobierz jego identyfikator
-    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userId == null)
+    // Wyciągnięcie tokena JWT z nagłówka żądania
+    var token = ExtractToken(Request);
+    if (string.IsNullOrEmpty(token))
     {
-        return Unauthorized("User is not logged in.");
+        return Unauthorized("Authentication token is missing.");
+    }
+
+    var userId = ValidateTokenAndGetUserId(token);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID could not be determined.");
     }
 
     // Pobierz użytkownika z bazy danych
