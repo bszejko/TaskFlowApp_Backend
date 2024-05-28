@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\TaskFlow\\TaskFlowApp\\TaskFlowApp_Backend\\TaskFlow.csproj": {}
+    "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj": {}
   },
   "projects": {
-    "D:\\TaskFlow\\TaskFlowApp\\TaskFlowApp_Backend\\TaskFlow.csproj": {
+    "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\TaskFlow\\TaskFlowApp\\TaskFlowApp_Backend\\TaskFlow.csproj",
+        "projectUniqueName": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
         "projectName": "TaskFlow",
-        "projectPath": "D:\\TaskFlow\\TaskFlowApp\\TaskFlowApp_Backend\\TaskFlow.csproj",
-        "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\TaskFlow\\TaskFlowApp\\TaskFlowApp_Backend\\obj\\",
+        "projectPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\TaskFlow.csproj",
+        "packagesPath": "C:\\Users\\amira\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\amira\\OneDrive\\Pulpit\\TaskFlowApp_Backend-1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\amira\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -39,11 +39,6 @@
           "warnAsError": [
             "NU1605"
           ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -57,6 +52,10 @@
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[8.0.5, )"
+            },
+            "Microsoft.AspNetCore.Cors": {
+              "target": "Package",
+              "version": "[2.2.0, )"
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
@@ -98,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -241,19 +241,18 @@ public IActionResult Logout()
 
 //METODY
 
-[HttpDelete("delete")]
+[HttpDelete("{id:string}")]
 public async Task<IActionResult> DeleteUser(string id)
 {
-    // Check if user exists
-    var user = await _usersCollection.Find(u => u.Id == id).FirstOrDefaultAsync();
+    var user = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
     if (user == null)
     {
-        return NotFound();
-    }
-    // Delete user
-    await _usersCollection.DeleteOneAsync(u => u.Id == id);
+        return NotFound();    }
+
+    await _context.Users.DeleteOneAsync(u => u.Id == id);
     return Ok(new { message = "User deleted successfully." });
 }
+
 
 [HttpPost("change-password")]
 public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
