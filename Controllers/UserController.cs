@@ -27,7 +27,7 @@ public class UserController : ControllerBase
 
     private readonly IConfiguration _configuration;
     private readonly IHttpContextAccessor _httpContextAccessor;
-private readonly IMongoCollection<User> _usersCollection;
+    private readonly IMongoCollection<User> _usersCollection;
 
 
 
@@ -38,7 +38,6 @@ private readonly IMongoCollection<User> _usersCollection;
         _configuration = configuration;
         _logger = logger;
         _usersCollection = _context.Users;
-
         _httpContextAccessor = httpContextAccessor;
 
     }
@@ -241,7 +240,7 @@ public IActionResult Logout()
 
 //METODY
 
-[HttpDelete("{id:string}")]
+[HttpDelete("{id}")]
 public async Task<IActionResult> DeleteUser(string id)
 {
     var user = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
@@ -252,6 +251,62 @@ public async Task<IActionResult> DeleteUser(string id)
     await _context.Users.DeleteOneAsync(u => u.Id == id);
     return Ok(new { message = "User deleted successfully." });
 }
+
+[HttpPatch("{id}")]
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] User updatedUserData)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var user = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        // Aktualizacja tylko wybranych pól użytkownika, jeśli zostały przekazane
+        if (!string.IsNullOrEmpty(updatedUserData.FirstName))
+        {
+            user.FirstName = updatedUserData.FirstName;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserData.LastName))
+        {
+            user.LastName = updatedUserData.LastName;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserData.Email))
+        {
+            user.Email = updatedUserData.Email;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserData.Role))
+        {
+            user.Role = updatedUserData.Role;
+        }
+        
+         if (!string.IsNullOrEmpty(updatedUserData.Password))
+        {
+            user.Password = updatedUserData.Password;
+        }
+
+        // Aktualizacja w bazie danych
+        var filter = Builders<User>.Filter.Eq(u => u.Id, id);
+        var update = Builders<User>.Update
+            .Set(u => u.FirstName, user.FirstName)
+            .Set(u => u.LastName, user.LastName)
+            .Set(u => u.Email, user.Email)
+            .Set(u => u.Role, user.Role)
+            .Set(u => u.Password, user.Password); // Aktualizacja hasła
+
+
+        await _context.Users.UpdateOneAsync(filter, update);
+
+        return Ok(new { message = "User updated successfully." });
+    }
+
 
 
 [HttpPost("change-password")]
