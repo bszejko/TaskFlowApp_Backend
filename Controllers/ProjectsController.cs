@@ -275,6 +275,43 @@ public async Task<IActionResult> GetProject(string projectId)
     }
 }
 
+[HttpDelete("{projectId}/deleteUser/{userId}")]
+public async Task<IActionResult> DeleteUserFromProject(string projectId, string userId)
+{
+    try
+    {
+        // Find the project
+        var project = await _context.Projects.Find(p => p.Id == projectId).FirstOrDefaultAsync();
+        if (project == null)
+        {
+            return NotFound("Project not found.");
+        }
+
+        // Remove the user from the project members list
+        var updateProject = Builders<Projects>.Update.Pull(p => p.Members, userId);
+        await _context.Projects.UpdateOneAsync(p => p.Id == projectId, updateProject);
+
+        // Delete all tasks assigned to the user within the project
+        var filterTasks = Builders<Tasks>.Filter.And(
+            Builders<Tasks>.Filter.Eq(t => t.ProjectId, projectId),
+            Builders<Tasks>.Filter.Eq(t => t.AssignedUserId, userId)
+        );
+        await _context.Tasks.DeleteManyAsync(filterTasks);
+
+        // Remove the project ID from the user's project list
+        var updateUser = Builders<User>.Update.Pull(u => u.ProjectIds, projectId);
+        await _context.Users.UpdateOneAsync(u => u.Id == userId, updateUser);
+
+        return Ok(new { message = "User removed from project and associated tasks deleted." });
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError($"Failed to delete user from project: {ex.Message}");
+        return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
+
+
 //METODY
 
 private string ExtractToken(HttpRequest request)
