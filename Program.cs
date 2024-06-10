@@ -9,11 +9,9 @@ using TaskFlow.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add logging configuration at the correct place
+// Add logging configuration
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
-
-
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(options =>
@@ -32,26 +30,28 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
     options.Events = new JwtBearerEvents
-{
-    OnMessageReceived = context =>
     {
-        context.Token = context.Request.Cookies["JWT"];
-        return Task.CompletedTask;
-    }
-};
-
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["JWT"];
+            return Task.CompletedTask;
+        }
+    };
 });
 
-// CORS configuration 
+// CORS configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
     corsBuilder =>
     {
-        corsBuilder.WithOrigins("http://localhost:8100", "http://192.168.56.1:8100") // Replace with the origin of your Ionic app
-                   .AllowAnyHeader()
-                   .AllowAnyMethod()
-                   .AllowCredentials();
+        corsBuilder.WithOrigins(
+            "https://localhost:8100", // Replace with the origin of your Ionic app
+            "http://192.168.56.1:8100"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -60,7 +60,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-
 
 // MongoDB configuration
 var mongoDbSettings = builder.Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
@@ -77,8 +76,30 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
+
+// Ensure CORS is configured before Authentication and Authorization middlewares
+app.UseCors("AllowSpecificOrigin");
+
+app.Use(async (context, next) =>
+{
+    // Handle OPTIONS request explicitly
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+        context.Response.StatusCode = 204; // No Content
+        return;
+    }
+
+    // Log request details for debugging
+    Console.WriteLine($"Request Method: {context.Request.Method}");
+    Console.WriteLine($"Request Headers: {string.Join(", ", context.Request.Headers.Select(h => $"{h.Key}: {h.Value}"))}");
+    
+    await next.Invoke();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -86,7 +107,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
 
 // MongoDbSettings class
 public class MongoDbSettings
