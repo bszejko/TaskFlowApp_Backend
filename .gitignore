@@ -15,3 +15,5 @@ obj/
 *.CoreCompileInputs.cache
 *.assets.cache
 *.sourcelink.json
+bin/Debug/net8.0/TaskFlow.dll
+bin/Debug/net8.0/TaskFlow.exe
