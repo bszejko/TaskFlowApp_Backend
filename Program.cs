@@ -9,16 +9,15 @@ using TaskFlow.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add logging configuration at the correct place
+// Add logging configuration
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
-
-
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
@@ -32,26 +31,25 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
     options.Events = new JwtBearerEvents
-{
-    OnMessageReceived = context =>
     {
-        context.Token = context.Request.Cookies["JWT"];
-        return Task.CompletedTask;
-    }
-};
-
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["JWT"];
+            return Task.CompletedTask;
+        }
+    };
 });
 
-// CORS configuration 
+// CORS configuration to allow any origin
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin",
+    options.AddPolicy("AllowAllOrigins",
     corsBuilder =>
     {
-        corsBuilder.WithOrigins("http://localhost:8100") // Replace with the origin of your Ionic app
+        corsBuilder.AllowAnyOrigin() // Allows requests from any origin
                    .AllowAnyHeader()
                    .AllowAnyMethod()
-                   .AllowCredentials();
+                   .AllowCredentials(); // Allow credentials if needed
     });
 });
 
@@ -60,7 +58,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-
 
 // MongoDB configuration
 var mongoDbSettings = builder.Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
@@ -77,8 +74,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
+
+// Ensure CORS is configured before Authentication and Authorization middlewares
+app.UseCors("AllowAllOrigins");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -86,7 +85,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
 
 // MongoDbSettings class
 public class MongoDbSettings
