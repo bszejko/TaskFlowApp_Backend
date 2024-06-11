@@ -47,7 +47,7 @@ builder.Services.AddCors(options =>
     {
         corsBuilder.WithOrigins(
             "https://localhost:8100",
-            "http://localhost:8100", // Replace with the origin of your Ionic app
+            "http://localhost:8100", // Replace with the origin of your Ionic appl
             "http://192.168.56.1:8100",
             "https://localhost"
         )
